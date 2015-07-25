@@ -10,6 +10,8 @@ import (
 type Marathon struct {
 	// comma separated marathon http endpoints including port number
 	Endpoint string
+
+	UseEventStream bool
 }
 
 func (m Marathon) Endpoints() []string {
