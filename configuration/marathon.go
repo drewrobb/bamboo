@@ -14,7 +14,7 @@ type Marathon struct {
 	Endpoint string
 	UseZookeeper bool
 	Zookeeper Zookeeper
-	User string
+	User     string
 	Password string
 	UseEventStream bool
 }
