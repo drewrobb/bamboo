@@ -39,6 +39,7 @@ func _zkEndpoints(zkConf Zookeeper) ([]string, error) {
 	var scheme = "http://"
 
 	conn, _, err := zk.Connect(zkConf.ConnectionString(), time.Second*10)
+	defer conn.Close()
 
 	if err != nil {
 		return nil, err
@@ -60,5 +61,6 @@ func _zkEndpoints(zkConf Zookeeper) ([]string, error) {
 		// TODO configurable http://??
 		endpoints = append(endpoints, scheme + string(data))
 	}
+
 	return endpoints, nil
 }
