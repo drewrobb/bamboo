@@ -44,6 +44,8 @@ func _zkEndpoints(zkConf Zookeeper) ([]string, error) {
 		return nil, err
 	}
 
+    defer conn.Close()
+
 	keys, _, err2 := conn.Children(zkConf.Path + "/leader")
 
 	if err2 != nil {
@@ -60,5 +62,6 @@ func _zkEndpoints(zkConf Zookeeper) ([]string, error) {
 		// TODO configurable http://??
 		endpoints = append(endpoints, scheme + string(data))
 	}
+
 	return endpoints, nil
 }
