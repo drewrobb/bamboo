@@ -31,12 +31,9 @@ func (m Marathon) Endpoints() []string {
 }
 
 func zkEndpoints(zkConf Zookeeper) ([]string, error) {
-	// Only tested with marathon 0.11.1
-
-	// TODO might want to reuse ZK Connection?
-	var scheme = "http://"
-
-	var leaderPath = zkConf.Path + "/leader"
+	// Only tested with marathon 0.11.1, assumes http:// for marathon
+	const scheme = "http://"
+	const leaderNode = "leader"
 
 	conn, _, err := zk.Connect(zkConf.ConnectionString(), time.Second*10)
 	defer conn.Close()
@@ -46,6 +43,8 @@ func zkEndpoints(zkConf Zookeeper) ([]string, error) {
 	}
 
 	defer conn.Close()
+
+	var leaderPath = zkConf.Path + "/" + leaderNode
 
 	keys, _, err := conn.Children(leaderPath)
 
