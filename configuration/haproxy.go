@@ -1,9 +1,11 @@
 package configuration
 
 type HAProxy struct {
-	TemplatePath    string
-	OutputPath      string
-	ReloadCommand   string
-	ShutdownCommand string
-	GraceSeconds int
+	TemplatePath            string
+	OutputPath              string
+	ReloadCommand           string
+	ReloadValidationCommand string
+	ReloadCleanupCommand    string
+	ShutdownCommand         string
+	GraceSeconds            int
 }

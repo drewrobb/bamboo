@@ -132,7 +132,7 @@ func registerMarathonEvent(conf *configuration.Configuration) {
 		url := marathon + "/v2/eventSubscriptions?callbackUrl=" + conf.Bamboo.Endpoint + "/api/marathon/event_callback"
 		req, _ := http.NewRequest("POST", url, nil)
 		req.Header.Add("Content-Type", "application/json")
-		if (len(conf.Marathon.User)>0 && len(conf.Marathon.Password)>0) {
+		if len(conf.Marathon.User) > 0 && len(conf.Marathon.Password) > 0 {
 			req.SetBasicAuth(conf.Marathon.User, conf.Marathon.Password)
 		}
 		resp, err := client.Do(req)
@@ -184,12 +184,16 @@ func listenToMarathonEventStream(conf *configuration.Configuration, sub api.Even
 	client := &http.Client{}
 	client.Timeout = 0 * time.Second
 
-	for _, marathon := range conf.Marathon.Endpoints() {
-		ticker := time.NewTicker(1 * time.Second)
-		go func() {
-			for _ = range ticker.C {
-				req, err := http.NewRequest("GET", marathon+"/v2/events", nil)
+	ticker := time.NewTicker(1 * time.Second)
+	go func() {
+		for _ = range ticker.C {
+			for _, marathon := range conf.Marathon.Endpoints() {
+				eventsURL := marathon + "/v2/events"
+				req, err := http.NewRequest("GET", eventsURL, nil)
 				req.Header.Set("Accept", "text/event-stream")
+				if len(conf.Marathon.User) > 0 && len(conf.Marathon.Password) > 0 {
+					req.SetBasicAuth(conf.Marathon.User, conf.Marathon.Password)
+				}
 				if err != nil {
 					errorMsg := "An error occurred while creating request to Marathon events system: %s\n"
 					log.Printf(errorMsg, err)
@@ -232,8 +236,8 @@ func listenToMarathonEventStream(conf *configuration.Configuration, sub api.Even
 
 				log.Println("Event stream connection was closed. Re-opening...")
 			}
-		}()
-	}
+		}
+	}()
 }
 
 func configureLog() {
