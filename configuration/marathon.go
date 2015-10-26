@@ -36,7 +36,6 @@ func zkEndpoints(zkConf Zookeeper) ([]string, error) {
 	const leaderNode = "leader"
 
 	conn, _, err := zk.Connect(zkConf.ConnectionString(), time.Second*10)
-	defer conn.Close()
 
 	if err != nil {
 		return nil, err
