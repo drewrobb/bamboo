@@ -56,6 +56,8 @@ func FromFile(filePath string) (Configuration, error) {
 	setValueFromEnv(&conf.HAProxy.TemplatePath, "HAPROXY_TEMPLATE_PATH")
 	setValueFromEnv(&conf.HAProxy.OutputPath, "HAPROXY_OUTPUT_PATH")
 	setValueFromEnv(&conf.HAProxy.ReloadCommand, "HAPROXY_RELOAD_CMD")
+	setValueFromEnv(&conf.HAProxy.ShutdownCommand, "HAPROXY_SHUTDOWN_CMD")
+	setIntValueFromEnv(&conf.HAProxy.GraceSeconds, "HAPROXY_GRACE_SECONDS")
 	setValueFromEnv(&conf.HAProxy.ReloadValidationCommand, "HAPROXY_RELOAD_VALIDATION_CMD")
 	setValueFromEnv(&conf.HAProxy.ReloadCleanupCommand, "HAPROXY_RELOAD_CLEANUP_CMD")
 
@@ -72,6 +74,21 @@ func setValueFromEnv(field *string, envVar string) {
 		*field = env
 	}
 }
+
+func setIntValueFromEnv(field *int, envVar string) {
+	env := os.Getenv(envVar)
+	if len(env) > 0 {
+		log.Printf("Using environment override %s=%t", envVar, env)
+		x, err := strconv.Atoi(env)
+		if err != nil {
+			log.Printf("Error converting int value: %s\n", err)
+		}
+		*field = x
+	} else {
+		log.Printf("Environment variable not set: %s", envVar)
+	}
+}
+
 
 func setBoolValueFromEnv(field *bool, envVar string) {
 	env := os.Getenv(envVar)
