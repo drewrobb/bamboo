@@ -75,7 +75,7 @@ func main() {
 	eventBus.Publish(event_bus.MarathonEvent{EventType: "bamboo_startup", Timestamp: time.Now().Format(time.RFC3339)})
 
 	// Handle gracefully exit
-	registerOSSignals()
+	registerOSSignals(&conf, eventBus)
 
 	// Start server
 	initServer(&conf, zkConn, eventBus)
@@ -253,12 +253,29 @@ func configureLog() {
 	}
 }
 
-func registerOSSignals() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+func registerOSSignals(conf *configuration.Configuration, eventBus *event_bus.EventBus) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		for _ = range c {
-			log.Println("Server Stopped")
+		sig := <-sigs
+		if sig == os.Interrupt {
+			log.Println("Server stopping now")
+			os.Exit(0)
+		} else if sig == syscall.SIGTERM {
+			log.Println("Server gracefully exiting...")
+
+			// First disable event bus, so that haproxy won't be
+			// restarted while we are trying to shutdown.
+			eventBus.Shutdown()
+
+			// Then gracefully shutdown haproxy, blocks
+			err := event_bus.ExecCommand(conf.HAProxy.ShutdownCommand)
+			if err != nil {
+				log.Fatalf("HAProxy: graceful shutdown failed\n")
+			} else {
+				log.Println("HAProxy: graceful shutdown complete")
+			}
+			log.Println("Server stopping after graceful haproxy shutdown")
 			os.Exit(0)
 		}
 	}()
