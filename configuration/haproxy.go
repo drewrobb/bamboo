@@ -8,4 +8,5 @@ type HAProxy struct {
 	ReloadCleanupCommand    string
 	ShutdownCommand         string
 	GraceSeconds            int
+	HostnameLabel           *string
 }
