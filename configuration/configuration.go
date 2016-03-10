@@ -63,6 +63,11 @@ func FromFile(filePath string) (Configuration, error) {
 	setIntValueFromEnv(&conf.HAProxy.GraceSeconds, "HAPROXY_GRACE_SECONDS")
 	setValueFromEnv(&conf.HAProxy.ReloadValidationCommand, "HAPROXY_RELOAD_VALIDATION_CMD")
 	setValueFromEnv(&conf.HAProxy.ReloadCleanupCommand, "HAPROXY_RELOAD_CLEANUP_CMD")
+
+	if conf.HAProxy.HostnameLabel == nil {
+		conf.HAProxy.HostnameLabel = new(string)
+	}
+
 	setValueFromEnv(conf.HAProxy.HostnameLabel, "HAPROXY_HOSTNAME_LABEL")
 
 	setValueFromEnv(&conf.StatsD.Host, "STATSD_HOST")
@@ -74,7 +79,7 @@ func FromFile(filePath string) (Configuration, error) {
 func setValueFromEnv(field *string, envVar string) {
 	env := os.Getenv(envVar)
 	if len(env) > 0 {
-		log.Printf("Using environment override %s=%s", envVar, env)
+		log.Printf("Using environment override %s=%s", envVar, *field)
 		*field = env
 	}
 }
