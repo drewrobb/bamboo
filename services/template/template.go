@@ -2,9 +2,11 @@ package template
 
 import (
 	"bytes"
-	"github.com/QubitProducts/bamboo/services/service"
 	"strings"
 	"text/template"
+
+	"github.com/QubitProducts/bamboo/services/marathon"
+	"github.com/QubitProducts/bamboo/services/service"
 )
 
 func hasKey(data map[string]service.Service, appId string) bool {
@@ -23,6 +25,7 @@ func getService(data map[string]service.Service, appId string) service.Service {
 func RenderTemplate(templateName string, templateContent string, data interface{}) (string, error) {
 	funcMap := template.FuncMap{
 		"hasKey":     hasKey,
+		"appAcl":     marathon.Acl,
 		"getService": getService,
 		"Split":      strings.Split,
 		"Contains":   strings.Contains,
