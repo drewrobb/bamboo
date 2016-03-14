@@ -10,20 +10,12 @@ func TestBalancerType(t *testing.T) {
 
 	Convey("should find balancer types correctly", t, func() {
 
-		Convey("When the label is internal", func() {
+		Convey("When the label exists", func() {
 			label := "internal"
 			h := HAProxy{HostnameLabel: &label}
 
 			So(*h.HostnameLabel, ShouldEqual, "internal")
-			So(h.BalancerType(), ShouldEqual, InternalBalancerType)
-		})
-
-		Convey("When the label is external", func() {
-			label := "external"
-			h := HAProxy{HostnameLabel: &label}
-
-			So(*h.HostnameLabel, ShouldEqual, "external")
-			So(h.BalancerType(), ShouldEqual, ExternalBalancerType)
+			So(string(h.BalancerType()), ShouldEqual, "internal")
 		})
 
 		Convey("When the label is nil", func() {
@@ -32,7 +24,7 @@ func TestBalancerType(t *testing.T) {
 			h := HAProxy{HostnameLabel: label}
 
 			So(h.HostnameLabel, ShouldEqual, nil)
-			So(h.BalancerType(), ShouldEqual, EmptyBalancerType)
+			So(string(h.BalancerType()), ShouldEqual, EmptyBalancerType)
 		})
 	})
 }

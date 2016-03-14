@@ -17,11 +17,14 @@ type HAProxy struct {
 type BalancerType string
 
 const (
-	EmptyBalancerType    = ""
-	InternalBalancerType = "internal"
-	ExternalBalancerType = "external"
+	// EmptyBalancerType is used to indicate that there is supplied balancer name
+	EmptyBalancerType = ""
+
+	// hostnameAclFormat indicates the filter for hostname rules
+	hostnameAclFormat = "hdr(host) -i %v"
 )
 
+// BalancerType contains information about the traffic that bamboo is routing
 func (h HAProxy) BalancerType() BalancerType {
 	if h.HostnameLabel == nil {
 		return EmptyBalancerType
@@ -30,9 +33,7 @@ func (h HAProxy) BalancerType() BalancerType {
 	return BalancerType(*h.HostnameLabel)
 }
 
-const hostnameAclFormat = "hdr(host) -i %v"
-
-// AclFormat returns a formatted acl
+// AclFormat returns a formatted host acl for HAProxy
 func AclFormat(hostname string) string {
 	return fmt.Sprintf(hostnameAclFormat, hostname)
 }

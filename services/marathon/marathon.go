@@ -41,24 +41,24 @@ type App struct {
 	Labels          map[string]string
 }
 
-const (
-	InternalHostnameLabel = "BAMBOO_INTERNAL_HOSTNAME"
-	ExternalHostnameLabel = "BAMBOO_EXTERNAL_HOSTNAME"
-)
+// hostnameLabels is the label that contains bamboo hostname configuratiuon that
+const hostnameConfiguration = "BAMBOO_HOSTNAME_CONF"
 
 // Acl returns the internal, external, or service acl based on the
 // bamboo task configuration (whether the balancer is internal, or external),
 // or uses the configured acl for the service if neither of thoses cases is true.
 func Acl(haproxy conf.HAProxy, a App, service service.Service) string {
 	acl := service.Acl
-	internalHostname, hasInternal := a.Labels[InternalHostnameLabel]
-	externalHostname, hasExternal := a.Labels[ExternalHostnameLabel]
+	bambooJSON, ok := a.Labels[hostnameConfiguration]
+	if !ok {
+		return acl
+	}
 
-	if haproxy.BalancerType() == conf.InternalBalancerType && hasInternal {
-		acl = conf.AclFormat(internalHostname)
+	var bambooValues map[string]string
+	json.Unmarshal([]byte(bambooJSON), &bambooValues)
 
-	} else if haproxy.BalancerType() == conf.ExternalBalancerType && hasExternal {
-		acl = conf.AclFormat(externalHostname)
+	if hostnameAcl, ok := bambooValues[string(haproxy.BalancerType())]; ok {
+		return conf.AclFormat(hostnameAcl)
 	}
 
 	return acl

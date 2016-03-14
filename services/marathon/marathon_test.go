@@ -11,36 +11,20 @@ import (
 func TestAcl(t *testing.T) {
 	Convey("#acl", t, func() {
 
-		s := service.Service{Acl: "foo.bar.com"}
+		s := service.Service{Acl: "hdr(host) -i foo.bar.com"}
 
 		Convey("should return internal correctly", func() {
 
 			label := "internal"
 			h := conf.HAProxy{HostnameLabel: &label}
+			labelJson := `{
+				"internal": "foo.internal.bar.com"
+			}`
 
-			Convey("should return internal if internal bamboo and internal hostname label", func() {
-				a := App{Labels: map[string]string{InternalHostnameLabel: "foo.internal.bar.com"}}
-				So(Acl(h, a, s), ShouldEqual, "foo.internal.bar.com")
+			Convey("should return balancer type acl if hostname label for balancer type", func() {
+				a := App{Labels: map[string]string{hostnameConfiguration: labelJson}}
+				So(Acl(h, a, s), ShouldEqual, conf.AclFormat("foo.internal.bar.com"))
 
-			})
-			Convey("should return default if internal bamboo and no internal hostname label", func() {
-				a := App{}
-				So(Acl(h, a, s), ShouldEqual, "foo.bar.com")
-			})
-		})
-
-		Convey("should return external correctly", func() {
-			label := "external"
-			ha := conf.HAProxy{HostnameLabel: &label}
-
-			Convey("should return external if external bamboo and external hostname label", func() {
-				a := App{Labels: map[string]string{ExternalHostnameLabel: "foo.external.bar.com"}}
-				So(Acl(ha, a, s), ShouldEqual, "foo.external.bar.com")
-			})
-
-			Convey("should return default if external bamboo and no internal hostname label", func() {
-				a := App{}
-				So(Acl(ha, a, s), ShouldEqual, "foo.bar.com")
 			})
 		})
 
@@ -49,17 +33,13 @@ func TestAcl(t *testing.T) {
 			ha := conf.HAProxy{HostnameLabel: &label}
 			a := App{}
 			Convey("should return service acl if no balancer type", func() {
-				So(Acl(ha, a, s), ShouldEqual, "foo.bar.com")
+				So(Acl(ha, a, s), ShouldEqual, s.Acl)
 			})
-			Convey("should return service acl if internal and no internal acl", func() {
+
+			Convey("should return service acl if balancer type and no balancer rtype rule ", func() {
 				label := "internal"
 				ha = conf.HAProxy{HostnameLabel: &label}
-				So(Acl(ha, a, s), ShouldEqual, "foo.bar.com")
-			})
-			Convey("should return service acl if external and no external acl", func() {
-				label := "external"
-				ha = conf.HAProxy{HostnameLabel: &label}
-				So(Acl(ha, a, s), ShouldEqual, "foo.bar.com")
+				So(Acl(ha, a, s), ShouldEqual, s.Acl)
 			})
 		})
 	})
