@@ -2,11 +2,13 @@ package marathon
 
 import (
 	"encoding/json"
-	"github.com/QubitProducts/bamboo/configuration"
 	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
+
+	conf "github.com/QubitProducts/bamboo/configuration"
+	"github.com/QubitProducts/bamboo/services/service"
 )
 
 // Describes an app process running
@@ -37,6 +39,29 @@ type App struct {
 	ServicePorts    []int
 	Env             map[string]string
 	Labels          map[string]string
+}
+
+// hostnameLabels is the label that contains bamboo hostname configuratiuon that
+const hostnameConfiguration = "BAMBOO_HOSTNAME_CONF"
+
+// Acl returns the internal, external, or service acl based on the
+// bamboo task configuration (whether the balancer is internal, or external),
+// or uses the configured acl for the service if neither of thoses cases is true.
+func Acl(haproxy conf.HAProxy, a App, service service.Service) string {
+	acl := service.Acl
+	bambooJSON, ok := a.Labels[hostnameConfiguration]
+	if !ok {
+		return acl
+	}
+
+	var bambooValues map[string]string
+	json.Unmarshal([]byte(bambooJSON), &bambooValues)
+
+	if hostnameAcl, ok := bambooValues[string(haproxy.BalancerType())]; ok {
+		return conf.AclFormat(hostnameAcl)
+	}
+
+	return acl
 }
 
 type AppList []App
@@ -100,7 +125,7 @@ type marathonHealthCheck struct {
 	PortIndex int    `json:"portIndex"`
 }
 
-func fetchMarathonApps(endpoint string, conf *configuration.Configuration) (map[string]marathonApp, error) {
+func fetchMarathonApps(endpoint string, conf *conf.Configuration) (map[string]marathonApp, error) {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", endpoint+"/v2/apps", nil)
 	req.Header.Add("Accept", "application/json")
@@ -136,7 +161,7 @@ func fetchMarathonApps(endpoint string, conf *configuration.Configuration) (map[
 	return dataById, nil
 }
 
-func fetchTasks(endpoint string, conf *configuration.Configuration) (map[string]marathonTaskList, error) {
+func fetchTasks(endpoint string, conf *conf.Configuration) (map[string]marathonTaskList, error) {
 	client := &http.Client{}
 	req, _ := http.NewRequest("GET", endpoint+"/v2/tasks", nil)
 	req.Header.Add("Accept", "application/json")
@@ -253,7 +278,7 @@ func parseHealthCheckPath(checks []marathonHealthCheck) string {
 	Parameters:
 		endpoint: Marathon HTTP endpoint, e.g. http://localhost:8080
 */
-func FetchApps(maraconf configuration.Marathon, conf *configuration.Configuration) (AppList, error) {
+func FetchApps(maraconf conf.Marathon, conf *conf.Configuration) (AppList, error) {
 
 	var applist AppList
 	var err error
@@ -269,7 +294,7 @@ func FetchApps(maraconf configuration.Marathon, conf *configuration.Configuratio
 	return nil, err
 }
 
-func _fetchApps(url string, conf *configuration.Configuration) (AppList, error) {
+func _fetchApps(url string, conf *conf.Configuration) (AppList, error) {
 	tasks, err := fetchTasks(url, conf)
 	if err != nil {
 		return nil, err

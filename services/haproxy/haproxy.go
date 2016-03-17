@@ -10,7 +10,7 @@ import (
 type templateData struct {
 	Apps     marathon.AppList
 	Services map[string]service.Service
-	GraceSeconds int
+	HAProxy  conf.HAProxy
 }
 
 func GetTemplateData(config *conf.Configuration, conn *zk.Conn) (*templateData, error) {
@@ -27,7 +27,5 @@ func GetTemplateData(config *conf.Configuration, conn *zk.Conn) (*templateData, 
 		return nil, err
 	}
 
-	graceSeconds := config.HAProxy.GraceSeconds
-
-	return &templateData{apps, services, graceSeconds}, nil
+	return &templateData{apps, services, config.HAProxy}, nil
 }
