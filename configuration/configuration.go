@@ -79,7 +79,7 @@ func FromFile(filePath string) (Configuration, error) {
 func setValueFromEnv(field *string, envVar string) {
 	env := os.Getenv(envVar)
 	if len(env) > 0 {
-		log.Printf("Using environment override %s=%s", envVar, *field)
+		log.Printf("Using environment override %s=%s", envVar, env)
 		*field = env
 	}
 }

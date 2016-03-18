@@ -2,6 +2,7 @@ package marathon
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sort"
@@ -49,7 +50,11 @@ const hostnameConfiguration = "BAMBOO_HOSTNAME_CONF"
 // or uses the configured acl for the service if neither of thoses cases is true.
 func Acl(haproxy conf.HAProxy, a App, service service.Service) string {
 	acl := service.Acl
+
+	fmt.Printf("ACL ACL %s %s", acl, a)
+
 	bambooJSON, ok := a.Labels[hostnameConfiguration]
+	fmt.Printf("ACL ACL %s %s", bambooJSON, ok)
 	if !ok {
 		return acl
 	}
@@ -57,7 +62,10 @@ func Acl(haproxy conf.HAProxy, a App, service service.Service) string {
 	var bambooValues map[string]string
 	json.Unmarshal([]byte(bambooJSON), &bambooValues)
 
+	fmt.Printf("ACL ACL %s %s", bambooValues, string(haproxy.BalancerType()))
+
 	if hostnameAcl, ok := bambooValues[string(haproxy.BalancerType())]; ok {
+		fmt.Printf("ACL ACL %s", conf.AclFormat(hostnameAcl))
 		return conf.AclFormat(hostnameAcl)
 	}
 
