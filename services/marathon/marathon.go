@@ -47,11 +47,10 @@ const hostnameConfiguration = "BAMBOO_HOSTNAME_CONF"
 // Acl returns the internal, external, or service acl based on the
 // bamboo task configuration (whether the balancer is internal, or external),
 // or uses the configured acl for the service if neither of thoses cases is true.
-func Acl(haproxy conf.HAProxy, a App, service service.Service) string {
-	acl := service.Acl
+func Acl(haproxy conf.HAProxy, a App, service *service.Service) string {
 	bambooJSON, ok := a.Labels[hostnameConfiguration]
 	if !ok {
-		return acl
+		return legacyAcl(service)
 	}
 
 	var bambooValues map[string]string
@@ -61,7 +60,15 @@ func Acl(haproxy conf.HAProxy, a App, service service.Service) string {
 		return conf.AclFormat(hostnameAcl)
 	}
 
-	return acl
+	return legacyAcl(service)
+}
+
+// We can remove legacyAcl entirely once only using labels
+func legacyAcl(service *service.Service) string {
+	if service != nil {
+		return (*service).Acl
+	}
+	return ""
 }
 
 type AppList []App

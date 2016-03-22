@@ -14,9 +14,12 @@ func hasKey(data map[string]service.Service, appId string) bool {
 	return exists
 }
 
-func getService(data map[string]service.Service, appId string) service.Service {
-	serviceModel, _ := data[appId]
-	return serviceModel
+func getService(data map[string]service.Service, appId string) *service.Service {
+	serviceModel, ok := data[appId]
+	if ok {
+		return &serviceModel
+	}
+	return nil
 }
 
 /*
