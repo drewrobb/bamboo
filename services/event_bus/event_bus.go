@@ -77,3 +77,11 @@ func (ebus *EventBus) addHandler(fnType reflect.Type, fn reflect.Value) {
 	}
 	ebus.handlers[fnType] = append(handlers, fn)
 }
+
+func (ebus *EventBus) Shutdown() {
+	ebus.lock.Lock()
+	defer ebus.lock.Unlock()
+
+	// Remove all handlers
+	ebus.handlers = make(map[reflect.Type][]reflect.Value)
+}

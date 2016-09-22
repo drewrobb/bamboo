@@ -9,6 +9,7 @@ import (
 type templateData struct {
 	Apps     marathon.AppList
 	Services map[string]service.Service
+	HAProxy  conf.HAProxy
 }
 
 func GetTemplateData(config *conf.Configuration, storage service.Storage) (*templateData, error) {
@@ -24,10 +25,5 @@ func GetTemplateData(config *conf.Configuration, storage service.Storage) (*temp
 		return nil, err
 	}
 
-	byName := make(map[string]service.Service)
-	for _, service := range services {
-		byName[service.Id] = service
-	}
-
-	return &templateData{apps, byName}, nil
+	return &templateData{apps, services, config.HAProxy}, nil
 }

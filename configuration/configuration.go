@@ -45,6 +45,9 @@ func FromFile(filePath string) (Configuration, error) {
 	conf := &Configuration{}
 	err := conf.FromFile(filePath)
 	setValueFromEnv(&conf.Marathon.Endpoint, "MARATHON_ENDPOINT")
+	setValueFromEnv(&conf.Marathon.Zookeeper.Host, "MARATHON_ZK_HOST")
+	setValueFromEnv(&conf.Marathon.Zookeeper.Path, "MARATHON_ZK_PATH")
+	setBoolValueFromEnv(&conf.Marathon.UseZookeeper, "MARATHON_USE_ZK")
 	setValueFromEnv(&conf.Marathon.User, "MARATHON_USER")
 	setValueFromEnv(&conf.Marathon.Password, "MARATHON_PASSWORD")
 	setBoolValueFromEnv(&conf.Marathon.UseEventStream, "MARATHON_USE_EVENT_STREAM")
@@ -56,8 +59,16 @@ func FromFile(filePath string) (Configuration, error) {
 	setValueFromEnv(&conf.HAProxy.TemplatePath, "HAPROXY_TEMPLATE_PATH")
 	setValueFromEnv(&conf.HAProxy.OutputPath, "HAPROXY_OUTPUT_PATH")
 	setValueFromEnv(&conf.HAProxy.ReloadCommand, "HAPROXY_RELOAD_CMD")
+	setValueFromEnv(&conf.HAProxy.ShutdownCommand, "HAPROXY_SHUTDOWN_CMD")
+	setIntValueFromEnv(&conf.HAProxy.GraceSeconds, "HAPROXY_GRACE_SECONDS")
 	setValueFromEnv(&conf.HAProxy.ReloadValidationCommand, "HAPROXY_RELOAD_VALIDATION_CMD")
 	setValueFromEnv(&conf.HAProxy.ReloadCleanupCommand, "HAPROXY_RELOAD_CLEANUP_CMD")
+
+	if conf.HAProxy.HostnameLabel == nil {
+		conf.HAProxy.HostnameLabel = new(string)
+	}
+
+	setValueFromEnv(conf.HAProxy.HostnameLabel, "HAPROXY_HOSTNAME_LABEL")
 
 	setValueFromEnv(&conf.StatsD.Host, "STATSD_HOST")
 	setValueFromEnv(&conf.StatsD.Prefix, "STATSD_PREFIX")
@@ -70,6 +81,20 @@ func setValueFromEnv(field *string, envVar string) {
 	if len(env) > 0 {
 		log.Printf("Using environment override %s=%s", envVar, env)
 		*field = env
+	}
+}
+
+func setIntValueFromEnv(field *int, envVar string) {
+	env := os.Getenv(envVar)
+	if len(env) > 0 {
+		log.Printf("Using environment override %s=%t", envVar, env)
+		x, err := strconv.Atoi(env)
+		if err != nil {
+			log.Printf("Error converting int value: %s\n", err)
+		}
+		*field = x
+	} else {
+		log.Printf("Environment variable not set: %s", envVar)
 	}
 }
 

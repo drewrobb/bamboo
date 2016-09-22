@@ -1,26 +1,46 @@
 package marathon
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/QubitProducts/bamboo/Godeps/_workspace/src/github.com/smartystreets/goconvey/convey"
+	conf "github.com/QubitProducts/bamboo/configuration"
+	"github.com/QubitProducts/bamboo/services/service"
 )
 
-func TestGetMesosDnsId_Simple(t *testing.T) {
-	Convey("#getMesosDnsId", t, func() {
-		Convey("should return simple appname", func() {
-			So(getMesosDnsId("appname"), ShouldEqual, "appname")
+func TestAcl(t *testing.T) {
+	Convey("#acl", t, func() {
+
+		s := service.Service{Acl: "hdr(host) -i foo.bar.com"}
+
+		Convey("should return internal correctly", func() {
+
+			label := "internal"
+			h := conf.HAProxy{HostnameLabel: &label}
+			labelJson := `{
+				"internal": "foo.internal.bar.com"
+			}`
+
+			Convey("should return balancer type acl if hostname label for balancer type", func() {
+				a := App{Labels: map[string]string{hostnameConfiguration: labelJson}}
+				So(Acl(h, a, s), ShouldEqual, conf.AclFormat("foo.internal.bar.com"))
+
+			})
 		})
 
-		Convey("should return simple appname if slash prefixed", func() {
-			So(getMesosDnsId("/appname"), ShouldEqual, "appname")
-		})
+		Convey("should return service acl correctly", func() {
+			label := ""
+			ha := conf.HAProxy{HostnameLabel: &label}
+			a := App{}
+			Convey("should return service acl if no balancer type", func() {
+				So(Acl(ha, a, s), ShouldEqual, s.Acl)
+			})
 
-		Convey("should return groups reverse-added to appname", func() {
-			So(getMesosDnsId("/group/appname"), ShouldEqual, "appname-group")
-		})
-
-		Convey("should return groups reverse-added to appname but no blanks", func() {
-			So(getMesosDnsId("//group/again//appname/"), ShouldEqual, "appname-again-group")
+			Convey("should return service acl if balancer type and no balancer rtype rule ", func() {
+				label := "internal"
+				ha = conf.HAProxy{HostnameLabel: &label}
+				So(Acl(ha, a, s), ShouldEqual, s.Acl)
+			})
 		})
 	})
 }

@@ -182,7 +182,7 @@ func validateConfig(validateTemplate string, newContent string) (err error) {
 	}
 
 	log.Println("Validating config")
-	err = execCommand(validateCommand)
+	err = ExecCommand(validateCommand)
 
 	return
 }
@@ -197,7 +197,7 @@ func changeConfig(conf *configuration.Configuration, newContent string) (reloade
 		return
 	}
 
-	err = execCommand(conf.HAProxy.ReloadCommand)
+	err = ExecCommand(conf.HAProxy.ReloadCommand)
 	if err != nil {
 		return
 	}
@@ -209,10 +209,10 @@ func changeConfig(conf *configuration.Configuration, newContent string) (reloade
 // This will be executed in a deferred, so is rather self contained
 func cleanupConfig(command string) {
 	log.Println("Cleaning up config")
-	execCommand(command)
+	ExecCommand(command)
 }
 
-func execCommand(cmd string) error {
+func ExecCommand(cmd string) error {
 	log.Printf("Exec cmd: %s \n", cmd)
 	output, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
