@@ -25,5 +25,10 @@ func GetTemplateData(config *conf.Configuration, storage service.Storage) (*temp
 		return nil, err
 	}
 
-	return &templateData{apps, services, config.HAProxy}, nil
+	byName := make(map[string]service.Service)
+	for _, service := range services {
+		byName[service.Id] = service
+	}
+
+	return &templateData{apps, byName, config.HAProxy}, nil
 }
