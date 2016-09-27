@@ -1,7 +1,6 @@
 package haproxy
 
 import (
-	"github.com/QubitProducts/bamboo/Godeps/_workspace/src/github.com/samuel/go-zookeeper/zk"
 	conf "github.com/QubitProducts/bamboo/configuration"
 	"github.com/QubitProducts/bamboo/services/marathon"
 	"github.com/QubitProducts/bamboo/services/service"
@@ -13,7 +12,7 @@ type templateData struct {
 	HAProxy  conf.HAProxy
 }
 
-func GetTemplateData(config *conf.Configuration, conn *zk.Conn) (*templateData, error) {
+func GetTemplateData(config *conf.Configuration, storage service.Storage) (*templateData, error) {
 
 	apps, err := marathon.FetchApps(config.Marathon, config)
 
@@ -21,11 +20,15 @@ func GetTemplateData(config *conf.Configuration, conn *zk.Conn) (*templateData, 
 		return nil, err
 	}
 
-	services, err := service.All(conn, config.Bamboo.Zookeeper)
-
+	services, err := storage.All()
 	if err != nil {
 		return nil, err
 	}
 
-	return &templateData{apps, services, config.HAProxy}, nil
+	byName := make(map[string]service.Service)
+	for _, service := range services {
+		byName[service.Id] = service
+	}
+
+	return &templateData{apps, byName, config.HAProxy}, nil
 }

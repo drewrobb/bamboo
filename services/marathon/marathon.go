@@ -13,9 +13,11 @@ import (
 
 // Describes an app process running
 type Task struct {
+	Id    string
 	Host  string
 	Port  int
 	Ports []int
+	Alive bool
 }
 
 // A health check on the application
@@ -30,15 +32,18 @@ type HealthCheck struct {
 
 // An app may have multiple processes
 type App struct {
-	Id              string
-	EscapedId       string
-	HealthCheckPath string
-	HealthChecks    []HealthCheck
-	Tasks           []Task
-	ServicePort     int
-	ServicePorts    []int
-	Env             map[string]string
-	Labels          map[string]string
+	Id                  string
+	MesosDnsId          string
+	EscapedId           string
+	HealthCheckPath     string
+	HealthCheckProtocol string
+	HealthChecks        []HealthCheck
+	Tasks               []Task
+	ServicePort         int
+	ServicePorts        []int
+	Env                 map[string]string
+	Labels              map[string]string
+	SplitId             []string
 }
 
 // hostnameLabels is the label that contains bamboo hostname configuratiuon that
@@ -91,15 +96,20 @@ type marathonTasks struct {
 	Tasks marathonTaskList `json:"tasks"`
 }
 
+type HealthCheckResult struct {
+	Alive bool
+}
+
 type marathonTask struct {
-	AppId        string
-	Id           string
-	Host         string
-	Ports        []int
-	ServicePorts []int
-	StartedAt    string
-	StagedAt     string
-	Version      string
+	AppId              string
+	Id                 string
+	Host               string
+	Ports              []int
+	ServicePorts       []int
+	StartedAt          string
+	StagedAt           string
+	Version            string
+	HealthCheckResults []HealthCheckResult
 }
 
 func (slice marathonTaskList) Len() int {
@@ -213,8 +223,20 @@ func fetchTasks(endpoint string, conf *conf.Configuration) (map[string]marathonT
 	return tasksById, nil
 }
 
-func createApps(tasksById map[string]marathonTaskList, marathonApps map[string]marathonApp) AppList {
+func calculateTaskHealth(healthCheckResults []HealthCheckResult, healthChecks []marathonHealthCheck) bool {
+	//If we don't even have health check results for every health check, don't count the task as healthy
+	if len(healthChecks) > len(healthCheckResults) {
+		return false
+	}
+	for _, healthCheck := range healthCheckResults {
+		if !healthCheck.Alive {
+			return false
+		}
+	}
+	return true
+}
 
+func createApps(tasksById map[string]marathonTaskList, marathonApps map[string]marathonApp) AppList {
 	apps := AppList{}
 
 	for appId, mApp := range marathonApps {
@@ -227,11 +249,14 @@ func createApps(tasksById map[string]marathonTaskList, marathonApps map[string]m
 
 		// build App from marathonApp
 		app := App{
-			Id:              appPath,
-			EscapedId:       strings.Replace(appId, "/", "::", -1),
-			HealthCheckPath: parseHealthCheckPath(mApp.HealthChecks),
-			Env:             mApp.Env,
-			Labels:          mApp.Labels,
+			Id:                  appPath,
+			MesosDnsId:          getMesosDnsId(appPath),
+			EscapedId:           strings.Replace(appId, "/", "::", -1),
+			HealthCheckPath:     parseHealthCheckPath(mApp.HealthChecks),
+			HealthCheckProtocol: parseHealthCheckProtocol(mApp.HealthChecks),
+			Env:                 mApp.Env,
+			Labels:              mApp.Labels,
+			SplitId:             strings.Split(appId, "/"),
 		}
 
 		app.HealthChecks = make([]HealthCheck, 0, len(mApp.HealthChecks))
@@ -254,9 +279,11 @@ func createApps(tasksById map[string]marathonTaskList, marathonApps map[string]m
 		for _, mTask := range tasksById[appId] {
 			if len(mTask.Ports) > 0 {
 				t := Task{
+					Id:    mTask.Id,
 					Host:  mTask.Host,
 					Port:  mTask.Ports[0],
 					Ports: mTask.Ports,
+					Alive: calculateTaskHealth(mTask.HealthCheckResults, mApp.HealthChecks),
 				}
 				tasks = append(tasks, t)
 			}
@@ -268,12 +295,36 @@ func createApps(tasksById map[string]marathonTaskList, marathonApps map[string]m
 	return apps
 }
 
+func getMesosDnsId(appPath string) string {
+	// split up groups and recombine for how mesos-dns/consul/etc use service name
+	//   "/nested/group/app" -> "app-group-nested"
+	groups := strings.Split(appPath, "/")
+	reverseGroups := []string{}
+	for i := len(groups) - 1; i >= 0; i-- {
+		if groups[i] != "" {
+			reverseGroups = append(reverseGroups, groups[i])
+		}
+	}
+	return strings.Join(reverseGroups, "-")
+}
+
 func parseHealthCheckPath(checks []marathonHealthCheck) string {
 	for _, check := range checks {
-		if check.Protocol != "HTTP" {
+		if check.Protocol != "HTTP" && check.Protocol != "HTTPS" {
 			continue
 		}
 		return check.Path
+	}
+	return ""
+}
+
+/* maybe combine this with the above? */
+func parseHealthCheckProtocol(checks []marathonHealthCheck) string {
+	for _, check := range checks {
+		if check.Protocol != "HTTP" && check.Protocol != "HTTPS" {
+			continue
+		}
+		return check.Protocol
 	}
 	return ""
 }

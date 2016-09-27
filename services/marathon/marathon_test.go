@@ -1,11 +1,8 @@
 package marathon
 
 import (
+	. "github.com/smartystreets/goconvey/convey"
 	"testing"
-
-	. "github.com/QubitProducts/bamboo/Godeps/_workspace/src/github.com/smartystreets/goconvey/convey"
-	conf "github.com/QubitProducts/bamboo/configuration"
-	"github.com/QubitProducts/bamboo/services/service"
 )
 
 func TestAcl(t *testing.T) {

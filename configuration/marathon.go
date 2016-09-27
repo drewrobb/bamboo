@@ -1,7 +1,7 @@
 package configuration
 
 import (
-	"github.com/QubitProducts/bamboo/Godeps/_workspace/src/github.com/samuel/go-zookeeper/zk"
+	"github.com/samuel/go-zookeeper/zk"
 	"strings"
 	"time"
 )

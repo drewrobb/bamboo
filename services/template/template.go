@@ -2,11 +2,10 @@ package template
 
 import (
 	"bytes"
-	"strings"
-	"text/template"
-
 	"github.com/QubitProducts/bamboo/services/marathon"
 	"github.com/QubitProducts/bamboo/services/service"
+	"strings"
+	"text/template"
 )
 
 func hasKey(data map[string]service.Service, appId string) bool {

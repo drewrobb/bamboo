@@ -1,4 +1,4 @@
-# Bamboo  [![Build Status](https://travis-ci.org/QubitProducts/bamboo.svg?branch=master)](https://travis-ci.org/QubitProducts/bamboo) [![Coverage Status](https://coveralls.io/repos/QubitProducts/bamboo/badge.svg?branch=coverage&service=github)](https://coveralls.io/github/QubitProducts/bamboo?branch=coverage)
+# Bamboo  [![Build Status](https://travis-ci.org/QubitProducts/bamboo.svg?branch=master)](https://travis-ci.org/QubitProducts/bamboo) [![Coverage Status](https://coveralls.io/repos/QubitProducts/bamboo/badge.svg?branch=master&service=github)](https://coveralls.io/github/QubitProducts/bamboo?branch=coverage)
 
 ![bamboo-logo](https://cloud.githubusercontent.com/assets/37033/4110258/a8cc58bc-31ef-11e4-87c9-dd20bd2468c2.png)
 
@@ -134,6 +134,32 @@ The default template shipped with Bamboo is aware of `BAMBOO_TCP_PORT`. When thi
 ```
 
 In this example, both `BAMBOO_TCP_PORT` and `MY_CUSTOM_ENV` can be accessed in HAProxy template. This enables flexible template customization depending on your preferences.
+
+#### Default Haproxy Template ACL
+
+The default acl rule in the `haproxy_template.cfg` uses the full
+marathon app id, which may include slash-separated groups.
+
+```
+        # This is the default proxy criteria
+        acl {{ $app.EscapedId }}-aclrule path_beg -i {{ $app.Id }}
+```
+
+For example if your app is named "/mygroup/appname", your default acl
+will be `path_beg -i /mygroup/appname`.  This can always be changed
+using the bamboo web UI.
+
+There is also a DNS friendly version of your marathon app Id which can
+be used instead of the slash-separated one.  `MesosDnsId` includes the
+groups as hyphenated suffixes.  For example, if your appname is
+"/another/group/app" then the `MesosDnsId` will be "app-group-another".
+
+You can edit the `haproxy_template.cfg` and use the DNS friendly name
+for your default ACL instead.
+
+```
+    acl {{ $app.EscapedId }}-aclrule hdr_dom(host) -i {{ $app.MesosDnsId }}
+```
 
 ### Environment Variables
 
@@ -298,7 +324,7 @@ Bamboo is started by supervisord in this Docker image. The [default Supervisord 
 
 We use [godep](https://github.com/tools/godep) managing Go package dependencies; Goconvey for unit testing; CommonJS and SASS for frontend development and build distribution.
  
-* Golang 1.3
+* Golang 1.7
 * Node.js 0.10.x+
 
 Golang:
@@ -314,7 +340,7 @@ cd $GOPATH/src/github.com/QubitProducts/bamboo
 # Build your binary
 go build
 
-# Run test
+# Run test (requires a local zookeeper running)
 goconvey
 ```
 
