@@ -6,7 +6,7 @@
     "lodash": "2.4.1",
     "jquery": "~2.1.0",
     "angular-moment": "~0.7.0",
-    "moment": "~2.6.0"
+    "moment": "~2.29.3"
   },
   "devDependencies": {
     "browserify": "~3.38.0",
