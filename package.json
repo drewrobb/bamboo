@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "dependencies": {
     "lodash": "2.4.1",
-    "jquery": "~2.1.0",
+    "jquery": "~2.2.4",
     "angular-moment": "~0.7.0",
     "moment": "~2.6.0"
   },
